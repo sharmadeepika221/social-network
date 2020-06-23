@@ -1,0 +1,77 @@
+jar {
+    baseName = 'sn-auth-service'
+}
+
+apply plugin: 'org.springframework.boot'
+apply plugin: "io.spring.dependency-management"
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-web') {
+        exclude module: 'spring-boot-starter-tomcat'
+    }
+    compile group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.5.2.RELEASE'
+    compile('org.springframework.boot:spring-boot-starter-undertow')
+    compile('org.springframework.boot:spring-boot-starter-actuator')
+    compile('org.springframework.cloud:spring-cloud-starter-oauth2')
+    compile('org.springframework.cloud:spring-cloud-starter-security')
+    compile('org.springframework.cloud:spring-cloud-starter-sleuth')
+    compile group: 'org.springframework.data', name: 'spring-data-jpa',
+            version: '1.0.0.RELEASE'
+    compile group: 'org.hibernate.javax.persistence',
+            name: 'hibernate-jpa-2.1-api', version: '1.0.2.Final'
+
+    compile("org.postgresql:postgresql:${postgresVersion}")
+
+    compile("org.projectlombok:lombok:${lombokVersion}")
+
+    runtime "javax.xml.bind:jaxb-api:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-core:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-impl:${jaxbApiVersion}"
+    runtime "javax.activation:activation:${activationVersion}"
+
+    compile project(':sn-user:sn-user-db-schema')
+
+    testCompile project(':sn-user:sn-user-db-schema')
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile("org.springframework.security:spring-security-test:${springSecurityTestVersion}")
+    testCompile('org.apache.httpcomponents:httpclient:4.5.4')
+    testCompile('io.jsonwebtoken:jjwt:0.9.0')
+    testCompile("org.hsqldb:hsqldb:${hsqldbVersion}")
+}
+
+processResources {
+    exclude "*.jks"
+
+    doLast {
+        copy {
+            from "src/main/resources/snks.jks"
+            into "$buildDir/resources/main"
+        }
+    }
+}
+
+processTestResources {
+    exclude "*.jks"
+
+    doLast {
+        copy {
+            from "src/main/resources/snks.jks"
+            into "$buildDir/resources/test"
+        }
+    }
+}
+
+docker {
+    name "social-network/${bootJar.baseName}"
+    tags 'latest'
+    dockerfile file('src/main/docker/Dockerfile')
+    files bootJar.archivePath
+    buildArgs(['JAR_FILE': "${bootJar.archiveName}"])
+}

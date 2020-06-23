@@ -1,0 +1,58 @@
+jar {
+    baseName = 'sn-message-api'
+}
+apply plugin: 'org.springframework.boot'
+apply plugin: "io.spring.dependency-management"
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-webflux")
+    compile("org.springframework.boot:spring-boot-starter-data-cassandra-reactive")
+    compile('org.springframework.cloud:spring-cloud-starter-netflix-eureka-client')
+
+    compile("org.projectlombok:lombok:${lombokVersion}")
+    implementation "org.apache.kafka:kafka-clients:2.3.1"
+    implementation "org.apache.kafka:kafka-streams:2.3.1"
+
+    compile "org.apache.kafka:kafka_2.12:2.3.1"
+    compile "org.apache.kafka:kafka-clients:2.3.1:test"
+    compile "org.apache.kafka:kafka_2.12:2.3.1:test"
+
+    runtime "javax.xml.bind:jaxb-api:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-core:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-impl:${jaxbApiVersion}"
+    runtime "javax.activation:activation:${activationVersion}"
+
+    compile project(':sn-common:sn-message-api')
+
+    testCompile "org.apache.kafka:kafka_2.12:2.3.1"
+    testCompile "org.apache.kafka:kafka-clients:2.3.1:test"
+    testCompile "org.apache.kafka:kafka_2.12:2.3.1:test"
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")
+    testCompile("org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}")
+    testImplementation("junit:junit:4.12")
+}
+configurations {
+    all*.exclude group: 'javax.jms', module: 'jms'
+    all*.exclude group: 'com.sun.jdmk', module: 'jmxtools'
+    all*.exclude group: 'com.sun.jmx', module: 'jmxri'
+    published
+}
+
+docker {
+    name "social-network/${bootJar.baseName}"
+    tags 'latest'
+    dockerfile file('src/main/docker/Dockerfile')
+    files bootJar.archivePath
+    buildArgs(['JAR_FILE': "${bootJar.archiveName}"])
+}
+
+test {
+    useJUnitPlatform()
+}

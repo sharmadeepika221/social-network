@@ -1,0 +1,57 @@
+jar {
+    baseName = 'sn-user-service'
+}
+
+apply plugin: 'org.springframework.boot'
+apply plugin: "io.spring.dependency-management"
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-web') {
+        exclude module: 'spring-boot-starter-tomcat'
+    }
+    compile('org.springframework.boot:spring-boot-starter-undertow')
+    compile('org.springframework.boot:spring-boot-starter-actuator')
+    compile('org.springframework.cloud:spring-cloud-starter-netflix-zuul')
+    compile('org.springframework.cloud:spring-cloud-starter-netflix-eureka-client')
+    compile("org.springframework.cloud:spring-cloud-starter-oauth2:${springCloudSecurityVersion}")
+    compile("org.springframework.cloud:spring-cloud-starter-security:${springCloudSecurityVersion}")
+
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.1.0'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
+    compile("org.postgresql:postgresql:${postgresVersion}")
+    compile group: 'org.springframework', name: 'spring-tx', version: '5.2.7.RELEASE'
+    compile group: 'org.springframework.data', name: 'spring-data-jpa', version: '2.3.1.RELEASE'
+    compile group: 'org.hibernate.javax.persistence', name: 'hibernate-jpa-2.0-api', version: '1.0.1.Final'
+    compile group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.5.2.RELEASE'
+
+    compile("org.projectlombok:lombok:${lombokVersion}")
+
+    runtime "javax.xml.bind:jaxb-api:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-core:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-impl:${jaxbApiVersion}"
+    runtime "javax.activation:activation:${activationVersion}"
+
+    compile project(':sn-user:sn-user-db-schema')
+    compile project(':sn-common:sn-oauth2-resource-server')
+
+    testCompile project(':sn-user:sn-user-db-schema')
+    testCompile project(':sn-common:sn-oauth2-resource-server-test')
+
+    testCompile("org.hsqldb:hsqldb:${hsqldbVersion}")
+    testCompile("org.springframework.boot:spring-boot-starter-test")
+    testCompile("org.springframework.security:spring-security-test:${springSecurityTestVersion}")
+}
+
+docker {
+    name "social-network/${bootJar.baseName}"
+    tags 'latest'
+    dockerfile file('src/main/docker/Dockerfile')
+    files bootJar.archivePath
+    buildArgs(['JAR_FILE': "${bootJar.archiveName}"])
+}

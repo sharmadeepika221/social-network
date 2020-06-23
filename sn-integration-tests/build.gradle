@@ -1,0 +1,36 @@
+jar {
+    baseName = 'sn-integration-tests'
+}
+
+dependencies {
+    runtime "javax.xml.bind:jaxb-api:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-core:${jaxbApiVersion}"
+    runtime "com.sun.xml.bind:jaxb-impl:${jaxbApiVersion}"
+    runtime "javax.activation:activation:${activationVersion}"
+
+    compile("org.projectlombok:lombok:${lombokVersion}")
+    compile group: 'com.palantir.docker.compose', name: 'docker-compose-rule-junit4', version: '0.32.0'
+
+
+    testCompile("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")
+    testCompile("org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}")
+    testCompile('com.palantir.docker.compose:docker-compose-rule-junit4:0.31.1')
+    testCompile('com.jayway.restassured:rest-assured:2.9.0')
+}
+
+test {
+    if (project.hasProperty('integrationTests')) {
+        println("envType          =====> " + System.getProperty('envType'))
+        println("clusterHost      =====> " + System.getProperty('clusterHost'))
+        println("integrationTests =====> " + project.hasProperty('integrationTests'))
+    }
+
+    onlyIf {
+        project.hasProperty('integrationTests')
+    }
+
+    useJUnitPlatform()
+
+    systemProperty 'envType', System.getProperty('envType')
+    systemProperty 'clusterHost', System.getProperty('clusterHost')
+}

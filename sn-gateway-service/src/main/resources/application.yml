@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: sn-gateway-service
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: sn-auth-service
+          uri: http://sn-auth-service:9999
+          predicates:
+            - Path=/uaa/**
+        - id: sn-user-service
+          uri: http://sn-user-service
+          predicates:
+            - Path=/user-service/api/**
+          filters:
+            - RewritePath=/user-service/api/(?<path>.*), /$\{path}
+        - id: sn-user-query-service
+          uri: http://sn-user-query-service
+          predicates:
+            - Path=/user-query-service/api/**
+          filters:
+            - RewritePath=/user-query-service/api/(?<path>.*), /$\{path}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://sn-discovery-service:8761/eureka/
+  instance:
+    preferIpAddress: true
+
+server:
+  port: 8765
+
+logging:
+  level:
+    ROOT: INFO
+    org.springframework.web: INFO

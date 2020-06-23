@@ -1,0 +1,91 @@
+version: '2.1'
+
+services:
+  users-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: $USERS_DB_POSTGRES_USER
+      POSTGRES_PASSWORD: $USERS_DB_POSTGRES_PASSWORD
+      POSTGRES_DB: sn-users
+
+  sn-discovery-service:
+    image: social-network/sn-discovery-service:latest
+    restart: always
+    ports:
+      - "8761:8761"
+
+  sn-gateway-service:
+    image: social-network/sn-gateway-service:latest
+    restart: always
+    ports:
+      - "8765:8765"
+    depends_on:
+      - sn-discovery-service
+
+  sn-auth-service:
+    environment:
+      SN_KEY_STORE_PASSWORD: $SN_KEY_STORE_PASSWORD
+      SN_STORAGE_SERVICE_PASSWORD: $SN_STORAGE_SERVICE_PASSWORD
+      SN_USER_SERVICE_PASSWORD: $SN_USER_SERVICE_PASSWORD
+      SN_USER_QUERY_SERVICE_PASSWORD: $SN_USER_QUERY_SERVICE_PASSWORD
+      POSTGRES_USER: $USERS_DB_POSTGRES_USER
+      POSTGRES_PASSWORD: $USERS_DB_POSTGRES_PASSWORD
+    image: social-network/sn-auth-service:latest
+    restart: always
+    ports:
+      - "9999:9999"
+    depends_on:
+      - sn-gateway-service
+      - sn-discovery-service
+
+  sn-user-service:
+    environment:
+      SPRING_ACTIVE_PROFILE: development
+      SN_USER_SERVICE_PASSWORD: $SN_USER_SERVICE_PASSWORD
+      POSTGRES_USER: $USERS_DB_POSTGRES_USER
+      POSTGRES_PASSWORD: $USERS_DB_POSTGRES_PASSWORD
+    image: social-network/sn-user-service:latest
+    restart: always
+    depends_on:
+      - sn-gateway-service
+      - sn-discovery-service
+
+  sn-user-query-service:
+    environment:
+      SN_USER_QUERY_SERVICE_PASSWORD: $SN_USER_QUERY_SERVICE_PASSWORD
+      POSTGRES_USER: $USERS_DB_POSTGRES_USER
+      POSTGRES_PASSWORD: $USERS_DB_POSTGRES_PASSWORD
+    image: social-network/sn-user-query-service:latest
+    restart: always
+    depends_on:
+      - sn-gateway-service
+      - sn-discovery-service
+
+  sqs:
+    image: graze/sqs-local
+    ports:
+      - 9324:9324
+    volumes:
+      - ./conf/elasticmq.conf:/elasticmq.conf
+
+  cassandra:
+    image: cassandra:latest
+    ports:
+      - "9042:9042"
+
+  sn-message-service:
+    environment:
+      SPRING_ACTIVE_PROFILE: development
+    image: social-network/sn-message-service:latest
+    restart: always
+    depends_on:
+      - cassandra
+      - sqs
+      - sn-gateway-service
+      - sn-discovery-service
+    volumes:
+      - ./scripts/wait_for_it.sh:/wait_for_it.sh
+    command: >
+      bash -c "chmod +x wait_for_it.sh
+      && ./wait_for_it.sh cassandra:9042 -- java -Djava.security.egd=file:/dev/./urandom -jar /app.jar"

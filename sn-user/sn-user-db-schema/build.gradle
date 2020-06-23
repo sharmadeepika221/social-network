@@ -1,0 +1,8 @@
+jar {
+    baseName = 'sn-user-db-schema'
+}
+
+dependencies {
+    compile 'org.liquibase:liquibase-core:3.5.5'
+    testCompile 'org.liquibase:liquibase-core:3.5.5'
+}
