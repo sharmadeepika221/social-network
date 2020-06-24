@@ -14,7 +14,7 @@ public class UserKafkaListener {
     }
 
     @KafkaListener(topics = "membership")
-    public void order(User user, Acknowledgment acknowledgment) {
+    public void membershipAction(User user, Acknowledgment acknowledgment) {
         log.info("Membership Created " + user.getName());
         acknowledgment.acknowledge();
     }
